@@ -1,0 +1,206 @@
+public class CricketPlayerUtility {
+    //adding bulk Players
+    public static void addingBulkPlyr(){
+        List<Cricket_player__c> CricketplayersToAdd = new List<Cricket_player__c>();
+        for(integer i=1; i<2; i++){
+            Cricket_player__c Bulkplayeradd = new Cricket_player__c();
+            Bulkplayeradd.Name = 'CSK Player '+i;
+            Bulkplayeradd.cricket_Team__c='a0M2w00000PGPDxEAP';
+            Bulkplayeradd.Player_Active__c=true;
+            Bulkplayeradd.Type_of_Player__c='Openner Batsmen';
+            CricketplayersToAdd.add(Bulkplayeradd);
+            
+        }
+        insert CricketplayersToAdd;
+    }
+    
+    //Update Bulk player
+    public static void updateBulkPlyr(){
+        List<Cricket_player__c> ListTOUpdate = new List<Cricket_player__c>(); 
+        List<Cricket_player__c> UpdatePlayer = new List<Cricket_player__c>([SELECT id,Name FROM Cricket_player__c WHERE cricket_Team__c = 'a0M2w00000PGPDxEAP']);
+        for(Cricket_player__c player : UpdatePlayer){
+            player.Name='update Csk';
+            ListTOUpdate.add(player);
+        }
+        Update ListTOUpdate;
+    }
+    
+    //Delete player
+    public static void deleteBulkPlyr(){
+        List<Cricket_player__c> ListTODelete = new List<Cricket_player__c>(); 
+        //  List<Cricket_player__c> deletePlayer = new List<Cricket_player__c>([SELECT id,Name FROM Cricket_player__c WHERE cricket_Team__c = 'a0M2w00000PGPDxEAP']);
+        //  a0M2w00000PGPDyEAP
+        List<Cricket_player__c> deletePlayer = new List<Cricket_player__c>([SELECT id,Name FROM Cricket_player__c WHERE cricket_Team__c = 'a0M2w00000Pb3WgEAJ']);
+        //List<Cricket_player__c> deletePlayer = new List<Cricket_player__c>([SELECT id,(SELECT id FROM Cricket_players__r  WHERE id = 'a0Q2w00000PTl6AEAT' ),Name FROM Cricket_Team__c WHERE id = 'a0M2w00000Pb3WgEAJ']);
+        //List<Cricket_player__c> deletePlayer = new List<Cricket_player__c>([SELECT id FROM Cricket_player__c WHERE id = 'a0Q2w00000PTl6FEAT']);
+        
+        ListTODelete.addAll(deletePlayer);
+        
+        Delete ListTODelete;
+    }
+    
+    
+    //Delete all player specific to team
+    public static void DeleteInBulk(){
+        List<Cricket_Player__c> ListToDelete = new List<Cricket_Player__c>();
+        List<Cricket_Player__c> plyrList = new List<Cricket_Player__c>([SELECT Id , Name FROM Cricket_Player__c WHERE Cricket_Team__c = 'a0M2w00000PGPAfEAP']);
+        for(Cricket_Player__c plyr: plyrList){
+           
+            ListToDelete.add(plyr);
+            
+        }
+        Delete ListToDelete;
+    }
+    
+    //maximum 25 players of which										[checked]
+    //maximum 11 players allowed to play- i.e. 11 players Active		[checked]
+    //also opener batting player can only be 2 players					[checked]
+    //maximum 8 players Foreign allowed									[checked]
+    //of Which 4 can be Active											[checked]
+    
+     public static void CheckProperteamVALIDATION(){
+        
+        Cricket_Team__c team = new Cricket_Team__c();
+        team.Name = 'CSK';
+        insert team;
+        
+        //Foreign 4 active
+        List<Cricket_Player__c> ActiveForeignList = new List<Cricket_Player__c>();
+        for(integer i = 0; i<4 ; i++){
+            Cricket_Player__c play1 = new Cricket_Player__c();
+            play1.Name= 'CSK Foreing PLayer' +i;
+            play1.Player_Active__c = true;
+            play1.Foreign_player__c = true;
+            play1.Cricket_Team__c = team.id;
+            ActiveForeignList.add(play1);
+        }
+        insert ActiveForeignList;
+        
+        
+        //foreign 4 Inactive
+        List<Cricket_Player__c> InActiveForeignList = new List<Cricket_Player__c>();
+         for(integer i = 0; i<4 ; i++){
+            Cricket_Player__c play2 = new Cricket_Player__c();
+            play2.Name= 'CSK Foriegn Inactive PLayer' +i;
+            play2.Player_Active__c = false;
+            play2.Foreign_player__c = False;
+            play2.Cricket_Team__c = team.id;
+            InActiveForeignList.add(play2);
+        }
+        insert InActiveForeignList;
+        
+         
+        //INDIAN 7 active
+         List<Cricket_Player__c> activeIndianList = new List<Cricket_Player__c>();
+        for(integer i = 0; i<7 ; i++){
+            Cricket_Player__c play3 = new Cricket_Player__c();
+            play3.Name= 'CSK  Indian PLayer' +i;
+            play3.Player_Active__c = true;
+            play3.Foreign_player__c = False;
+            play3.Cricket_Team__c = team.id;
+            activeIndianList.add(play3);
+        }
+        insert activeIndianList;
+    }
+    
+    
+    public static void CheckTotalPlayer(){
+        
+        Cricket_Team__c team = new Cricket_Team__c();
+        team.Name = 'CSK';
+        insert team;
+        
+        List<Cricket_Player__c> MaxPlayerCountList = new List<Cricket_Player__c>();
+        
+        for(integer i = 0; i<4 ; i++){
+            Cricket_Player__c maxplayers = new Cricket_Player__c();
+            maxplayers.Name= 'CSK PLayer' +i;
+            maxplayers.Player_Active__c = true;
+            maxplayers.Foreign_player__c = false;
+            maxplayers.Cricket_Team__c = team.id;
+            MaxPlayerCountList.add(maxplayers);
+        }
+        insert MaxPlayerCountList;
+        
+         Cricket_Team__c team1 = new Cricket_Team__c();
+        team1.Name = 'CSK';
+        insert team1;
+        
+        Cricket_Player__c maxplayers2 = new Cricket_Player__c();
+            maxplayers2.Name= 'RR';
+            maxplayers2.Player_Active__c = true;
+            maxplayers2.Foreign_player__c = true;
+            maxplayers2.Cricket_Team__c = team1.id;
+            insert maxplayers2;
+        
+        
+		}
+    
+     //Delete all player specific to team
+    public static void DeleteBulkPLayer(){
+        List<Cricket_Player__c> ListToDelete = new List<Cricket_Player__c>();
+        List<Cricket_Player__c> plyrList = new List<Cricket_Player__c>([SELECT Id , Name FROM Cricket_Player__c WHERE Cricket_Team__c = 'a0MIg000000mLfzMAE']);
+        for(Cricket_Player__c plyr: plyrList){
+           
+            ListToDelete.add(plyr);
+            
+        }
+        Delete ListToDelete;
+    }
+    
+    public static void BeforeUPdateCheckTotalPlyr(){
+        
+        //update all players where Id = MI  update team.id to GT
+        List<Cricket_Player__c> UpdateplayerList = new List<Cricket_Player__c>();
+        List<Cricket_Player__c> UpdatePlayer = new List<Cricket_Player__c>([SELECT ID FROM Cricket_Player__c WHERE Cricket_Team__c = 'a0M2w00000PGPAfEAP']);
+        for(Cricket_Player__c Player: UpdatePlayer){
+             player.Cricket_Team__c= 'a0M2w00000PGPDyEAP' ;
+            
+            UpdateplayerList.add(player);
+        }
+        update UpdateplayerList;
+        
+    }
+       
+    public static void CheckBeforeUpdateTotalTeamCount(){
+        Cricket_Team__c team = new Cricket_Team__c();
+        team.Name = 'CSK';
+        insert team;
+        
+        
+        List<Cricket_Player__c> ActiveForeignList = new List<Cricket_Player__c>();
+        for(integer i = 0; i<15 ; i++){
+            Cricket_Player__c maxplayers = new Cricket_Player__c();
+            maxplayers.Name= 'CSK PLayer' +i;
+            maxplayers.Player_Active__c = false;
+            maxplayers.Foreign_player__c = false;
+            maxplayers.Cricket_Team__c = team.id;
+            ActiveForeignList.add(maxplayers);
+        }
+        insert ActiveForeignList;
+        
+        Cricket_Team__c team2 = new Cricket_Team__c();
+        team2.Name = 'CSK';
+        insert team2;
+        
+        List<Cricket_Player__c> InActiveList = new List<Cricket_Player__c>();
+        for(integer i = 0; i<16 ; i++){
+            Cricket_Player__c maxplayersLimit = new Cricket_Player__c();
+            maxplayersLimit.Name= 'CSK PLayer' +i;
+            maxplayersLimit.Player_Active__c = true;
+            maxplayersLimit.Foreign_player__c = true;
+            maxplayersLimit.Cricket_Team__c = team2.id;
+            InActiveList.add(maxplayersLimit);
+        }
+        insert InActiveList;
+        
+        List<Cricket_Player__c> CricketPlayerList = new List<Cricket_Player__c>([Select Id from Cricket_Player__c WHERE Cricket_Team__c =: team.id]);
+        for(Cricket_Player__c playerToUpdate : CricketPlayerList){
+            playerToUpdate.Cricket_Team__c = team2.id ;
+            update  playerToUpdate;
+        }
+    }
+    
+
+        
+    }

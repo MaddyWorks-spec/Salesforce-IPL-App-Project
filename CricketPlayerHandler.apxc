@@ -1,0 +1,579 @@
+public class CricketPlayerHandler {
+    
+    //check if players is related to some team
+    //get count all existing players related to that team
+    //check if the count of existing players + new players to that team > 25
+    //if Yes, throw Error    
+    //Also check That no more than 11 players exist
+    public static void beforeInsertValidationSimplified(List<Cricket_Player__c> newPlayersList){
+        set<Id> teamIds = new set<Id>();
+        for(Cricket_Player__c NewPlayer: newPlayersList){
+            if(NewPlayer.Cricket_Team__c != null){
+                
+                teamIds.add(NewPlayer.Cricket_Team__c);
+            }
+            
+        }
+        Map<id,Cricket_Team__c> CricketTeamCountMap = new Map<id,Cricket_Team__c>([SELECT Id, Name, (SELECT ID FROM Cricket_Players__r) FROM Cricket_Team__c]);
+        
+        system.debug(CricketTeamCountMap); // all id of cricket team are stored here - RCB CSK MI RR
+        
+        Map<id,Integer> NewPlayerperTeamCount = new Map<id,Integer>();
+        // in 1st if block (id of new player,1) is added
+        // in else block value inside map 
+        
+        
+        
+        for(Cricket_Player__c NewPlayer: newPlayersList){
+            
+            //gets existing count of players from map
+            Integer ExistingPlyr = CricketTeamCountMap.get(NewPlayer.Cricket_Team__c).Cricket_Players__r.size();
+            system.debug(ExistingPlyr); // returned existing 4 plyr
+            
+            if(!NewPlayerperTeamCount.containsKey(NewPlayer.Cricket_Team__c)){
+                NewPlayerperTeamCount.put(NewPlayer.Cricket_Team__c, 1);
+                
+            }else{
+                integer value = NewPlayerperTeamCount.get(NewPlayer.Cricket_Team__c); //RCB player will get added if map already contains key
+                system.debug(value);
+                NewPlayerperTeamCount.put(NewPlayer.Cricket_Team__c, value+1);
+                system.debug(NewPlayer.Cricket_Team__c);
+                system.debug(value+1);
+                
+                
+            }
+            String teamName = CricketTeamCountMap.get(NewPlayer.Cricket_Team__c).Name;
+            integer newPlayerCount = NewPlayerperTeamCount.get(NewPlayer.Cricket_Team__c);
+            if(newPlayerCount + ExistingPlyr > 25){
+                
+                NewPlayer.addError('only 25 players are Allowed in '+ teamName);
+            }
+            
+        }
+    }
+    
+    //Squad of only 7 players
+    public static void onlySEVENPlayerActive(List<Cricket_Player__c> newPlayersList){
+        set<Id> teamIds = new set<Id>();
+        for(Cricket_Player__c newPlayer : newPlayersList){
+            if(newplayer.Cricket_Team__c != null && newplayer.Player_Active__c == true && newplayer.Foreign_player__c== false){
+                teamIds.add(newplayer.Cricket_Team__c);
+                System.debug(newplayer.Cricket_Team__c);
+            }
+        }
+        
+        Map<id,Cricket_Team__c> playerTeamMap = new Map<id,Cricket_Team__c>([SELECT Id ,
+                                                                             (SELECT Id FROM Cricket_Players__r 
+                                                                              WHERE Player_Active__c = true AND Foreign_player__c = false )
+                                                                             FROM Cricket_Team__c WHERE Id IN : teamIds]);
+        map<id, Integer> playerActiveCount = new map<id, Integer>();
+        for(Cricket_Team__c team : playerTeamMap.values()){
+            
+
+            //if inside the map there Exist no RCB Team , put map<RCB,1>
+            if(!playerActiveCount.containsKey(team.Id)){
+                playerActiveCount.put(team.Id, team.Cricket_Players__r.Size());
+            }     
+        }
+        
+        //track the current player being Inserted
+        for(Cricket_Player__c player : newPlayersList){
+            //if the player have the RCB in the Map<id, get the values associated + 1 > 
+            if(playerActiveCount.containsKey(player.Cricket_Team__c)){
+                playerActiveCount.put(player.Cricket_Team__c, playerActiveCount.get(player.Cricket_Team__c) + 1);
+            }
+            else{
+                //if RCB doesn't Exist than add inside map<team. id, 1 > 
+                playerActiveCount.put(player.Cricket_Team__c, 1);
+            }
+            
+            if(playerActiveCount.get(player.Cricket_Team__c)>7 ){
+                player.addError('Only 7 Indian Active player are allowed to play for match');
+            }
+            
+        }
+    }
+    
+    //Only two batter who 
+    //can be Active AND Forign OR both Active and foreign
+        
+    public static void onlyTwoBatter(List<Cricket_Player__c> newPlayersList){
+        set<Id> teamIds = new set<Id>();
+        for(Cricket_Player__c newPlayer : newPlayersList){
+            if(newplayer.Cricket_Team__c != null && newplayer.Type_of_Player__c == 'Openner Batsmen' && newplayer.Player_Active__c == true ){
+                teamIds.add(newplayer.Cricket_Team__c);
+                System.debug(newplayer.Cricket_Team__c);
+            }
+        }
+        
+        Map<id,Cricket_Team__c> CricketTeamCountMap = new Map<id,Cricket_Team__c>([SELECT Id,(SELECT Id FROM Cricket_Players__r WHERE Type_of_Player__c = 'Openner Batsmen' AND Player_Active__c = true ) FROM Cricket_Team__c WHERE id IN: teamIds]);
+        
+        
+        map<Id, Integer> onlyTwoBatter = new map<Id, Integer>();
+
+        for(Cricket_Team__c player : CricketTeamCountMap.values()){
+            if(!onlyTwoBatter.containsKey(player.id)){
+            onlyTwoBatter.put(player.id, player.Cricket_Players__r.size()+1);
+            
+        }
+        
+        for(Cricket_Player__c newPlayer : newPlayersList){
+            if(onlyTwoBatter.containsKey(newplayer.Cricket_Team__c)){
+                onlyTwoBatter.put(newplayer.Cricket_Team__c, onlyTwoBatter.get(newplayer.Cricket_Team__c)+1);
+            }else{
+                onlyTwoBatter.put(newplayer.Cricket_Team__c, 1);
+            }
+            if(onlyTwoBatter.get(newplayer.Cricket_Team__c)>2){
+                system.debug(newplayer.Cricket_Team__c);
+                newplayer.addError('Only two Openning Batsmen can play on Field');
+            }
+            
+            
+        }        
+        
+    }
+    }
+    
+    //Squad of minimum 18 players
+    //maximum of 25
+    //8 foreign players allowed only 4 can be active to play on field
+    //In total 11 players can be active
+    public static void beforeInsertCheckForeignField(List<Cricket_Player__c> newPlayersList){
+        set<id> teamIds = new set<id>();
+        for(Cricket_Player__c newplayer: newPlayersList){
+            //step 2
+            if(newplayer.Cricket_Team__c!=null && newplayer.Foreign_player__c && newplayer.Player_Active__c){
+                teamIds.add(NewPlayer.Cricket_Team__c);
+            }
+        }
+        //Query the existing teams and player
+        map<id,Cricket_Team__c> teamPlayerCountMap = new map<id,Cricket_Team__c>([SELECT Id, 
+                                                                                  (SELECT Id
+                                                                                   FROM Cricket_Players__r 
+                                                                                   WHERE Foreign_player__c = true 
+                                                                                   AND Player_Active__c = true)
+                                                                                  FROM Cricket_Team__c WHERE Id IN:teamIds
+                                                                                 ]);
+        map<id,Integer> activeForeignPlayersMap = new map<id,Integer>(); // RCB , 1 -> if checked as foreign player
+        for(Cricket_Team__c team :  teamPlayerCountMap.values()){
+            if(!activeForeignPlayersMap.containsKey(team.Id)){
+                activeForeignPlayersMap.put(team.id, team.Cricket_Players__r.size());
+            }
+        }
+                
+        for(Cricket_Player__c newplayer: newPlayersList){
+            if(newplayer.Cricket_Team__c != null && newplayer.Foreign_player__c && newplayer.Player_Active__c){
+                if(!activeForeignPlayersMap.containsKey(newplayer.Cricket_Team__c)){
+                    activeForeignPlayersMap.put(newplayer.Cricket_Team__c, 1);
+                }else{
+                    activeForeignPlayersMap.put(newplayer.Cricket_Team__c, activeForeignPlayersMap.get(newplayer.Cricket_Team__c) + 1 );
+                }
+            }
+            
+            if(activeForeignPlayersMap.get(newplayer.Cricket_Team__c) > 4){
+                newPlayer.Player_Active__c.addError('Foreign active players should not be more than 4 players');
+            }
+        }
+    
+    }
+    
+    //---------------------------------------------------------------------------------------------------------------------------------------
+
+    //a team can have only 25 players
+    //before update
+    //  only when old player is associated to another cricket team, check the count of player on the teams , if exceeds above 25, add error
+    public static void only25Players(map<id, Cricket_Player__c> newPlayerMap, map<id, Cricket_Player__c>  oldPlayerMap){
+        //check if playes is associated to a team
+        set<id> teamIds = new set<id>();
+        for(Cricket_Player__c player : newPlayerMap.values()){
+            Cricket_Player__c oldPlayer = oldPlayermap.get(player.id);
+            //if player was not asso to any team but now it is
+            if(oldPlayer.Cricket_Team__c  == null && player.Cricket_Team__c != null){
+                teamIds.add(player.Cricket_Team__c);
+                //if cricket team are changed
+            }else if(oldPlayer.Cricket_Team__c != null && Player.Cricket_Team__c != null && oldPlayer.Cricket_Team__c != player.Cricket_Team__c){
+                teamIds.add(player.Cricket_Team__c);
+            }
+        }
+        
+        List<AggregateResult> results = [SELECT COUNT(id) players, Cricket_Team__c 
+                                         FROM Cricket_Player__c 
+                                         WHERE Cricket_Team__c IN : teamIds 
+                                         GROUP BY Cricket_Team__c];
+        Map<id,Cricket_Team__c> CricketTeamCountMap = new Map<id,Cricket_Team__c>([SELECT Id, Name, (SELECT ID FROM Cricket_Players__r) FROM Cricket_Team__c WHERE id IN: teamIds]); 
+        system.debug('CricketTeamCountMap ->'+CricketTeamCountMap);
+        Map<id, integer> countMap = new map<id, integer>();
+        //iterate over new player list
+        for(Cricket_Player__c player : newPlayerMap.values()){
+            if(!countMap.containsKey(player.Cricket_Team__c)){
+                countMap.put(player.Cricket_Team__c, CricketTeamCountMap.get(player.Cricket_Team__c).Cricket_Players__r.size() + 1);
+            }else{
+                system.debug('countMap.get(player.Cricket_Team__c) before->'+countMap.get(player.Cricket_Team__c));
+                countMap.put(player.Cricket_Team__c, countMap.get(player.Cricket_Team__c) + 1);
+            }
+            system.debug('countMap.get(player.Cricket_Team__c) after->'+countMap.get(player.Cricket_Team__c));
+            if(countMap.get(player.Cricket_Team__c) > 25){
+                player.addError('only 25 players are Allowed in '+ CricketTeamCountMap.get(player.Cricket_Team__c).Name);
+            }
+        }
+    }
+    
+    public static void OnlySevenPlayers(map<Id, Cricket_Player__c> newPlayerMap , map<id, Cricket_Player__c> oldPlayerMap){
+        
+        //what is the flow to get to the old and new player
+        //newplayer entering should have team different than the old and foreign player checkbox should be false and Active should be true
+        //for old one only the team should be null or something other things don't matter
+        
+        set<id> teamIds = new set<id>();
+        for(Cricket_Player__c newPlayer : newPlayerMap.values()){
+            Cricket_Player__c oldPlayer = oldPlayerMap.get(newPlayer.id);
+
+            //Scenerio if the ( new is something ) ( old is null )
+            //when Player1  active [check] foreign [uncheck] execute this
+            if( oldPlayer.Cricket_Team__c == null && newPlayer.Cricket_Team__c != null && newplayer.Player_Active__c == true && newPlayer.Foreign_player__c == false){
+                teamIds.add(newPlayer.Cricket_Team__c);
+                system.debug('active [check] foreign [uncheck] execute this');
+            }
+            //Scenerio if the [new is something][old is something] when active [check] foreign [uncheck]
+            else if(newPlayer.Cricket_Team__c != null && newplayer.Player_Active__c == true && newPlayer.Foreign_player__c == false && oldPlayer.Cricket_Team__c != null && newPlayer.Cricket_Team__c !=  oldPlayer.Cricket_Team__c ){
+                teamIds.add(newPlayer.Cricket_Team__c);
+                system.debug('new is something][old is something] when active [check] foreign [uncheck]');
+            }
+        }
+        
+        map<id,Cricket_Team__c > PlayerCountMap = new map<id,Cricket_Team__c >([SELECT id, Name,
+                                                                                (SELECT id FROM Cricket_Players__r 
+                                                                                 WHERE Player_Active__c = true AND Foreign_player__c = false ) 
+                                                                                FROM Cricket_Team__c WHERE id IN: TeamIds]);
+        system.debug('SevenPlayerCountMap'+PlayerCountMap);
+        
+        map<id,Integer> SevenPlayerCountMap = new map<id,Integer>();
+        
+        
+        //*note- we require new players details so iterate over that and then check with Query
+        for(Cricket_Player__c Player : newPlayerMap.values()){
+            
+            //if the map doesnt contain key for the add that player.size + itself as 1
+            if(!SevenPlayerCountMap.containsKey(Player.Cricket_Team__c)&& Player.Foreign_player__c != true && Player.Player_Active__c == true ){
+                SevenPlayerCountMap.put(Player.Cricket_Team__c, PlayerCountMap.get(Player.Cricket_Team__c).Cricket_Players__r.size() +1 );
+                system.debug('Doesnt contain in SEVEN COUNT MAP');
+            }
+            else if(SevenPlayerCountMap.containsKey(Player.Cricket_Team__c) && Player.Foreign_player__c != true && Player.Player_Active__c == true ){
+                //if team exist put that id and fetch the count from the Query don't add becoz that one player is being added 
+                SevenPlayerCountMap.put(Player.Cricket_Team__c, SevenPlayerCountMap.get(Player.Cricket_Team__c)+1);
+                system.debug('The SEVEN COUNT MAP');
+                    }
+            
+            if(SevenPlayerCountMap.get(Player.Cricket_Team__c)>7){
+                system.debug('SevenPlayerCountMap.get(Player.Cricket_Team__c)'+SevenPlayerCountMap.get(Player.Cricket_Team__c));
+                Player.addError('Only 7 maximum indian player can exist within '+ PlayerCountMap.get(Player.Cricket_Team__c).Name);
+                    }
+        }
+        
+    }
+    
+    public static void OnlyFourForeignPlayer(map<Id, Cricket_Player__c> newPlayerMap , map<id, Cricket_Player__c> oldPlayerMap){
+        set<id> teamIds = new set<id>();
+        for(Cricket_Player__c newPlayer : newPlayerMap.values()){
+            Cricket_Player__c oldPlayer = oldPlayerMap.get(newPlayer.id);
+            if(oldPlayer.Cricket_Team__c == null && newPlayer.Cricket_Team__c != null && newPlayer.Player_Active__c == true && newPlayer.Foreign_player__c == true){
+                teamIds.add(newPlayer.Cricket_Team__c);
+            }else if(newPlayer.Cricket_Team__c != null && oldPlayer.Cricket_Team__c != null && newPlayer.Cricket_Team__c != oldPlayer.Cricket_Team__c && newPlayer.Cricket_Team__c != null && newPlayer.Player_Active__c == true && newPlayer.Foreign_player__c == true){
+                teamIds.add(newPlayer.Cricket_Team__c);
+            }  
+        }
+        
+        Map<id,Cricket_Team__c> OnlyyForiegnMap = new Map<id,Cricket_Team__c> ([SELECT id, Name,
+                                                                                (SELECT id FROM Cricket_Players__r 
+                                                                                 WHERE Player_Active__c = true AND Foreign_player__c = true) 
+                                                                                FROM Cricket_Team__c WHERE id IN : teamIds ]);
+        Map<id,integer> PlayerCountMap = new Map<id,integer>();
+        for(Cricket_Player__c newPlayer : newPlayerMap.values()){
+            if(!PlayerCountMap.containsKey(newPlayer.Cricket_Team__c) && newPlayer.Player_Active__c == true && newplayer.Foreign_player__c == true){
+                PlayerCountMap.put(newPlayer.Cricket_Team__c, OnlyyForiegnMap.get(newPlayer.Cricket_Team__c).Cricket_Players__r.Size() +1);
+            }
+            else if(PlayerCountMap.containsKey(newPlayer.Cricket_Team__c) && newPlayer.Player_Active__c == true && newplayer.Foreign_player__c == true){
+                PlayerCountMap.put(newPlayer.Cricket_Team__c, PlayerCountMap.get(newPlayer.Cricket_Team__c)+ 1);
+            }
+            if(PlayerCountMap.get(newPlayer.Cricket_Team__c)>4){
+                newPlayer.addError('Only 4 Players can exist within -' +OnlyyForiegnMap.get(newPlayer.Cricket_Team__c).Name);
+            }
+        }
+        
+    }
+    
+    public static void OnlyTwoBatterPlayer(map<Id, Cricket_Player__c> newPlayerMap , map<id, Cricket_Player__c> oldPlayerMap){
+        set<id> teamIds = new set<id>();
+        for(Cricket_Player__c newPlayer : newPlayerMap.values()){
+            Cricket_Player__c oldPlayer = oldPlayerMap.get(newPlayer.id);
+            if(oldPlayer.Cricket_Team__c == null && newPlayer.Cricket_Team__c != null && newPlayer.Player_Active__c == true && newPlayer.Type_of_Player__c == 'Openner Batsmen'){
+                teamIds.add(newPlayer.Cricket_Team__c);
+            } 
+            else if(oldPlayer.Cricket_Team__c != null && newPlayer.Cricket_Team__c != null && oldPlayer.Cricket_Team__c != newPlayer.Cricket_Team__c  && newPlayer.Player_Active__c == true){
+                teamIds.add(newPlayer.Cricket_Team__c);
+            }
+        }
+        
+          map<id,Cricket_Team__c > PlayerCountMap = new map<id,Cricket_Team__c >([SELECT id, Name,
+                                                                                (SELECT id FROM Cricket_Players__r 
+                                                                                 WHERE Player_Active__c = true AND Type_of_Player__c = 'Openner Batsmen' ) 
+                                                                                FROM Cricket_Team__c WHERE id IN: TeamIds]);
+        system.debug('SevenPlayerCountMap'+PlayerCountMap);
+        
+        map<id,Integer> OpeneingBatterMap = new map<id,Integer>();
+        for(Cricket_Player__c newPlayer : newPlayerMap.values()){
+            if(!OpeneingBatterMap.containsKey(newPlayer.Cricket_Team__c) && newPlayer.Type_of_Player__c == 'Openner Batsmen'){
+                OpeneingBatterMap.put(newPlayer.Cricket_Team__c, PlayerCountMap.get(newPlayer.Cricket_Team__c).Cricket_Players__r.Size() +1);
+            }
+            else if(OpeneingBatterMap.containsKey(newPlayer.Cricket_Team__c) &&  newPlayer.Type_of_Player__c == 'Openner Batsmen'){
+                OpeneingBatterMap.put(newPlayer.Cricket_Team__c, OpeneingBatterMap.get(newPlayer.Cricket_Team__c) +1);
+            }
+            
+            if(OpeneingBatterMap.get(newPlayer.Cricket_Team__c)>2){
+                newPlayer.addError('Only 2 Opening Batsmen can exist within -' +PlayerCountMap.get(newPlayer.Cricket_Team__c).Name);
+            }
+            
+        }
+    }
+    
+    
+    public static void OnlyEightForeignPlayer(map<Id, Cricket_Player__c> newPlayerMap , map<id, Cricket_Player__c> oldPlayerMap){
+         set<id> teamIds = new set<id>();
+        for(Cricket_Player__c newPlayer : newPlayerMap.values()){
+            Cricket_Player__c oldPlayer = oldPlayerMap.get(newPlayer.id);
+            if(oldPlayer.Cricket_Team__c == null && newPlayer.Cricket_Team__c != null && newPlayer.Player_Active__c == false && newPlayer.Foreign_player__c == true){
+                teamIds.add(newPlayer.Cricket_Team__c);
+            } 
+            else if(oldPlayer.Cricket_Team__c != null && newPlayer.Cricket_Team__c != null && oldPlayer.Cricket_Team__c != newPlayer.Cricket_Team__c  && newPlayer.Player_Active__c == true  && newPlayer.Foreign_player__c == false){
+                teamIds.add(newPlayer.Cricket_Team__c);
+            }
+        }
+        
+        
+         map<id,Cricket_Team__c > PlayerCountMap = new map<id,Cricket_Team__c >([SELECT id, Name,
+                                                                                (SELECT id FROM Cricket_Players__r 
+                                                                                 WHERE Player_Active__c = false AND Foreign_player__c = true ) 
+                                                                                FROM Cricket_Team__c WHERE id IN: TeamIds]);
+        system.debug('SevenPlayerCountMap'+PlayerCountMap);
+        
+        map<id,Integer> EightForeignMap = new map<id,Integer>();
+        for(Cricket_Player__c newPlayer : newPlayerMap.values()){
+            if(!EightForeignMap.containsKey(newPlayer.Cricket_Team__c) && newPlayer.Player_Active__c == false && newPlayer.Foreign_player__c == true){
+                EightForeignMap.put(newPlayer.Cricket_Team__c, PlayerCountMap.get(newPlayer.Cricket_Team__c).Cricket_Players__r.Size() +1);
+            }
+            else if(EightForeignMap.containsKey(newPlayer.Cricket_Team__c) && newPlayer.Player_Active__c == false && newPlayer.Foreign_player__c == true){
+                EightForeignMap.put(newPlayer.Cricket_Team__c, EightForeignMap.get(newPlayer.Cricket_Team__c) +1);
+            }
+            
+            if(EightForeignMap.get(newPlayer.Cricket_Team__c)>4){
+                newPlayer.addError('Only 4 Inactive Foreign player can exist within -' +PlayerCountMap.get(newPlayer.Cricket_Team__c).Name);
+            }
+            
+        }
+    }
+    //----------------------------------------------------------------------------------------------------------------------------------------
+    
+    //AFTER INSERT event
+    //displays Count After Trigger on Player , the team has an action of updating the count of Active, batsmen, etc
+    public static void AllFieldCount(List<Cricket_Player__c> PlayerList){
+        
+        set<id> teams = new set<id>(); // teams Accoicated witth respective players
+        
+        for(Cricket_Player__c player: PlayerList){
+            if(player.Cricket_Team__c != null){
+                teams.add(player.Cricket_Team__c);
+                
+            }        
+            system.debug(player);
+        }         
+        
+        //List<Cricket_Player__c> captionName = [SELECT Id, Name  FROM Cricket_Player__c WHERE Type_of_Player__c = 'BatsMen']
+        //for(Cricket_Player__c cap : CaptainName){}//
+        
+        List<AggregateResult> results = [Select COUNT(id) PlayerCount, COUNT(Active_Formula__c) active, COUNT(Batsman_formula__c) batsmen,  COUNT(Opener_formula__c) Opener, Cricket_team__c
+                                         FROM Cricket_Player__c Where Cricket_Team__c IN: teams
+                                         GROUP BY Cricket_Team__c];
+        
+        List<Cricket_Team__c> teamsToUpdate = new List<Cricket_Team__c>();
+        
+        for(AggregateResult result : results){
+            
+            Cricket_Team__c team = new Cricket_Team__c();
+            team.id = String.ValueOf(result.get('Cricket_Team__c')); //String value of player obj converted to Integer
+            team.No_of_Batsman__c = integer.valueOf(result.get ('batsmen'));
+            team.No_of_Active_player__c = integer.valueOf(result.get('active'));
+            team.No_of_Players__c= integer.valueOf(result.get('PlayerCount'));
+            //team.Opener_Batter__c = String.ValueOf(result.get('Opener'));
+            teamsToUpdate.add(team);
+        }
+        update teamsToUpdate;
+        
+    }                           
+    
+    //opening batsmen Names are listed on Team respectively 
+    public static void openingBatsmanHandler( List<Cricket_Player__c> playerList){
+        set<id> teamIds = new set<id>();
+        for(Cricket_Player__c player : playerList){
+            if(player.Cricket_Team__c != null){
+                teamIds.add(player.Cricket_Team__c);
+            }
+            
+        }
+        
+        Map<id,Cricket_Team__c>  openerNameMap = new Map<id,Cricket_Team__c>([Select id, Name ,(select Name from Cricket_Players__r Where Type_of_Player__c = 'Openner BatsMen') from Cricket_Team__c Where id IN: teamIds]);
+        List<Cricket_Team__c> teamsToUpdate = new List<Cricket_Team__c>();
+        for(Cricket_Team__c opener : openerNameMap.values()){
+            String playerNames = '';
+            List<Cricket_Player__c> BatsMans = opener.Cricket_Players__r;
+            for(Cricket_Player__c player : BatsMans){
+                playerNames = playerNames + player.Name+ ',';
+            }
+            opener.Opener_Batter__c = playerNames; 
+            //we can Make Team Object field changes in Map itself
+        }
+        Update openerNameMap.values();
+    }
+    
+    //-----------------------------------------------------------------------------------------------------------------------------------------
+    //we need two context variables trigger.new, trigger.oldMap
+    //AFTER UPDATE Trigger methods
+    
+    //List those 25 player updated Content onto the TEAM
+    //now what we want is UPdate old Stuff as well update the Teams for Oldplayer
+    public static void afterUpdateAllFieldCount(List<Cricket_Player__c> newPlayersList , map<id, Cricket_Player__c> oldPlayersMap){
+        Set<id> teamIds = new Set<id>();
+        for(Cricket_Player__c newplayer : newPlayersList){
+            Cricket_Player__c oldPlayer = oldPlayersMap.get(newplayer.id);
+            if(newplayer.Cricket_Team__c != null && oldPlayer.Cricket_Team__c != null && newplayer.Cricket_Team__c != oldPlayer.Cricket_Team__c){
+                teamIds.add(newplayer.Cricket_Team__c);
+                teamIds.add(oldPlayer.Cricket_Team__c);
+            }
+        }
+        
+        //Query to get the details of fields like No. of Active_player, No. of player, no. of Batsmen OPenner basmen from the Child object
+        List<AggregateResult> results = [SELECT COUNT(Id) totalPlayer , COUNT(Active_Formula__c) totalActive, COUNT(Batsman_formula__c) batsmen, Cricket_Team__c 
+                                         FROM Cricket_Player__c WHERE Cricket_Team__c IN : teamIds 
+                                         GROUP By Cricket_Team__c];
+            System.debug('results -->' +results);
+        
+        // map<id,Integer> BulkUpdateMap = new map<id,Integer>();
+        List<Cricket_Team__c>  UpdateTeams = new List<Cricket_Team__c>();
+        for(AggregateResult result: results){
+            
+            Cricket_Team__c team = new Cricket_Team__c();
+            team.Id = String.valueOF(result.get('Cricket_Team__c'));
+            team.No_of_Players__c = Integer.valueOf(result.get('totalPlayer'));
+            team.No_of_Active_player__c = Integer.valueOf(result.get('totalActive'));
+            team.No_of_Batsman__c = Integer.valueOf(result.get('batsmen'));
+            UpdateTeams.add(team);
+        }
+        
+        if(!UpdateTeams.isEmpty()){
+            Update UpdateTeams;
+        }
+    }
+    
+    public static void  AfterUpdateOpenningBatter(List<Cricket_Player__c> newPlayersList , map<id, Cricket_Player__c> oldPlayersMap){
+        Set<id> teamIds = new Set<id>();
+        for(Cricket_Player__c newplayer : newPlayersList){
+            Cricket_Player__c oldPlayer = oldPlayersMap.get(newplayer.id);
+            //we want those In this map Player triggering with new as Type of player == 'OPener Batsmen'
+            if(newplayer.Cricket_Team__c != null && oldPlayer.Cricket_Team__c != null && newplayer.Cricket_Team__c != oldPlayer.Cricket_Team__c){
+                teamIds.add(newplayer.Cricket_Team__c);
+                teamIds.add(oldPlayer.Cricket_Team__c);
+            }
+        }
+        
+        //we need Parent to Child to UPdate the parent when Trigger fired on Child
+        
+        map<id, Cricket_Team__c> OpeningBatsmenMap = new map<id, Cricket_Team__c>([SELECT Id ,(SELECT Id, Name ,Type_of_Player__c
+                                                                                               FROM Cricket_Players__r 
+                                                                                               WHERE Type_of_Player__c = 'Openner BatsMen') 
+                                                                                   FROM Cricket_Team__c WHERE Id IN: TeamIds]);
+        //map<id, Cricket_Player__c> OpeningBatsmenMap = new map<id, Cricket_Player__c>([SELECT Id, Cricket_Team__c FROM Cricket_Player__c WHERE Type_of_Player__c = 'Openner BatsMen' AND Cricket_Team__c IN: teamIds]);
+        //List<Cricket_Team__c> TeamUpdateBAtterNames = new List<Cricket_Team__c>();
+        for(Cricket_Team__c player : OpeningBatsmenMap.values()){
+            
+            String PlayerNames = '';
+            List<Cricket_Player__c> OpennerList = player.Cricket_Players__r;
+            for(Cricket_Player__c Opennerplayer : OpennerList){
+                PlayerNames = PlayerNames + Opennerplayer.Name + ',';
+                system.debug(PlayerNames);
+            }
+            player.Opener_Batter__c = PlayerNames;
+            
+        }
+        update OpeningBatsmenMap.values();
+    }
+
+    //-----------------------------------------------------------------------------------------------------------------------------------------
+    //AFTER DELETE event
+    //In it the Deleted players that are associated with those respective team are Updated with the No. of total player count
+    public static void afterBulkDeletion(List<Cricket_player__c> oldplyrList){
+        set<id> teamId = new set<id>();
+        for(Cricket_player__c oldplr: oldplyrList){
+            if(oldplr.Cricket_Team__c!=null){
+                
+                system.debug('Not null Player Id'+oldplr.Name);
+                teamId.add(oldplr.Cricket_Team__c); 
+            }
+        }
+        
+        
+        Map<id,Integer> playerCounts = new Map<id,Integer>();
+        List<AggregateResult> results =[SELECT COUNT(ID) cnt, Cricket_Team__c
+                                        FROM Cricket_Player__c 
+                                        WHERE Cricket_Team__c IN : teamId 
+                                        GROUP BY Cricket_Team__c];
+        
+        for(AggregateResult result: results){
+            Id teamIID = (Id) result.get('Cricket_Team__c');
+            Integer count = (Integer) result.get('cnt');
+            playerCounts.put(teamIID,count);
+            System.debug(teamIID);
+            System.debug(count);
+        }
+        
+        List<Cricket_Team__c> teamList = new List<Cricket_Team__c>();
+        for(id Teams: teamId){
+            Cricket_Team__c team = new Cricket_Team__c(id=Teams);
+            team.No_of_Players__c = playerCounts.containsKey(teams) ? playerCounts.get(teams) : 0;
+            teamList.add(team);
+            
+        }
+        if(!teamList.isEmpty()){
+            update teamList;  
+        }
+    }
+    
+    //the name from the end is being removed if he's a opener Batsmen
+    public static void openerBatsmenDeletion(List<Cricket_player__c> oldcricketplayer){
+        set<id> teams = new set<id>();
+        for(Cricket_player__c oldplayer: oldcricketplayer){
+            if(oldplayer.Cricket_Team__c != null){
+                teams.add(oldplayer.Cricket_Team__c);
+            }
+        }
+        
+        Map<id,Cricket_Team__c> openerNameMap = new Map<id,Cricket_Team__c>([SELECT id, (SELECT id, Name FROM Cricket_players__r WHERE Type_of_Player__c = 'Openner BatsMen') FROM Cricket_Team__c WHERE id IN: teams]);    
+        //in Above we match the old deleteted openers
+        List<Cricket_Team__c> teamToDelete = new List<Cricket_Team__c>(); // list to update for the openers
+        
+        
+        for(Cricket_Team__c opener : openerNameMap.values()){ // get map values which are in opener old map 
+            String PlayerNames = '';                    // update the playernames by removing those
+            List<Cricket_player__c> Batsmen = opener.Cricket_players__r; // get from the sub Query that opener batsmen and iterate which will naturally reduce the Names
+            
+            if(!Batsmen.isEmpty()){  //wich means is not empty batsmen field has to be changed
+                for(Cricket_player__c player: Batsmen){
+                    playerNames += player.Name+'' ;
+                }
+            }
+            opener.Opener_Batter__c= playerNames.removeEnd(', ');
+            teamToDelete.add(opener);
+        }
+        update teamToDelete;
+    }
+
+    
+}

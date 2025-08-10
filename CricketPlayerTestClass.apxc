@@ -1,0 +1,484 @@
+@isTest
+public class CricketPlayerTestClass {
+     /*
+     //PassedTest
+    @isTest
+    static void testBeforeInsertCheckForeignField() {
+        // Step 1: Create three teams
+        Cricket_Team__c team1 = new Cricket_Team__c(Name = 'Team 1');
+        Cricket_Team__c team2 = new Cricket_Team__c(Name = 'Team 2');
+        Cricket_Team__c team3 = new Cricket_Team__c(Name = 'Team 3');
+        insert new List<Cricket_Team__c>{team1, team2, team3};
+            
+            // Step 2: Add 4 active foreign players to team1
+            List<Cricket_Player__c> team1Players = new List<Cricket_Player__c>();
+        for (Integer i = 0; i < 4; i++) {
+            team1Players.add(new Cricket_Player__c(
+                Name = 'Team1 Foreign Player ' + i,
+                Cricket_Team__c = team1.Id,
+                Player_Active__c = true,
+                Foreign_player__c = true
+            ));
+        }
+        insert team1Players;
+        
+        // Step 3: Add a 5th active foreign player to team1 (should trigger an error)
+        Cricket_Player__c team1ExcessPlayer = new Cricket_Player__c(
+            Name = 'Team1 Foreign Player 5',
+            Cricket_Team__c = team1.Id,
+            Player_Active__c = true,
+            Foreign_player__c = true
+        );
+        
+        try {
+            insert team1ExcessPlayer;
+            System.assert(false, 'Expected an error when inserting a 5th foreign player for team1');
+        } catch (DmlException e) {
+            System.assert(e.getMessage().contains('Foreign active players should not be more than 4 players'), 'Expected validation error not found');
+        }
+        
+        // Step 4: Add 4 active foreign players to team2
+        List<Cricket_Player__c> team2Players = new List<Cricket_Player__c>();
+        for (Integer i = 0; i < 4; i++) {
+            team2Players.add(new Cricket_Player__c(
+                Name = 'Team2 Foreign Player ' + i,
+                Cricket_Team__c = team2.Id,
+                Player_Active__c = true,
+                Foreign_player__c = true
+            ));
+        }
+        insert team2Players;
+        
+        // Step 5: Add a 5th active foreign player to team2 (should trigger an error)
+        Cricket_Player__c team2ExcessPlayer = new Cricket_Player__c(
+            Name = 'Team2 Foreign Player 5',
+            Cricket_Team__c = team2.Id,
+            Player_Active__c = true,
+            Foreign_player__c = true
+        );
+        
+        try {
+            insert team2ExcessPlayer;
+            System.assert(false, 'Expected an error when inserting a 5th foreign player for team2');
+        } catch (DmlException e) {
+            System.assert(e.getMessage().contains('Foreign active players should not be more than 4 players'), 'Expected validation error not found');
+        }
+        
+        // Step 6: Add a single active foreign player to team3 (should work fine)
+        Cricket_Player__c team3Player = new Cricket_Player__c(
+            Name = 'Team3 Foreign Player 1',
+            Cricket_Team__c = team3.Id,
+            Player_Active__c = true,
+            Foreign_player__c = true
+        );
+        
+        insert team3Player;
+    }
+
+*/
+    
+    /*
+    @isTest 
+    static void testBeforeInsert25players(){
+        test.startTest();
+        Cricket_Team__c testteam= new Cricket_Team__c(Name='test team');
+        insert testteam;
+        
+        List<Cricket_Player__c> PlayerList = new List<Cricket_Player__c>();
+        for(Integer i=1; i<25 ; i++){
+            Cricket_Player__c player = new Cricket_Player__c();
+            player.Name='rcb player'+i;
+            player.Player_Active__c= false;
+            player.Foreign_player__c= false;
+            player.Type_of_Player__c='Batsmen';
+            player.Cricket_Team__c= testteam.id;
+            PlayerList.add(player);
+            
+        }
+        insert PlayerList;
+        
+        
+        Cricket_Player__c player26 = new Cricket_Player__c();
+        player26.Name='rcb player';
+        player26.Player_Active__c= false;
+        player26.Foreign_player__c= false;
+        player26.Type_of_Player__c='Batsmen';
+        player26.Cricket_Team__c= testteam.id;
+        
+        try{
+            insert player26;
+        }
+        catch(DMLException e){
+            system.assert(e.getMessage().contains('only 25 players are Allowed in '+ testteam.Name), 'Unexpected Error');
+        }
+        
+        test.stopTest();
+        
+        
+    }
+    
+*/
+    
+    @isTest
+    public static void TestBeforeInsertValidation(){
+        Cricket_Team__c testteam = new Cricket_Team__c(Name='RCB');
+        insert testteam;
+        
+        List<Cricket_Player__c> existingPlayer = new List<Cricket_Player__c>();
+        for(Integer i = 1; i<10; i++){
+            Cricket_Player__c p1 = new Cricket_Player__c();
+            p1.Name= 'Player' +i;
+            p1.Cricket_team__c= testteam.id;
+            p1.Player_Active__c = false;
+            P1.Foreign_player__c= false;
+            existingPlayer.add(p1);
+        }
+        insert existingPlayer;
+        
+   
+        
+        List<Cricket_Player__c> insertedPlayers = [SELECT Id FROM Cricket_Player__c WHERE Cricket_Team__c = :testteam.id];
+        system.debug(insertedPlayers);
+        system.assertEquals(24,insertedPlayers.size(), 'No additional player should been inserted');
+        
+    }
+    
+    /*
+    //passed test
+    @isTest
+    static void TestPlayerUtilty(){
+        test.startTest();
+        List<Cricket_Player__c> player1  = CrickeyPlayersUtilityClass.bulkCricketPlayers(1, 'CSK Player','a0M2w00000PGPDxEAP');
+        test.StopTest();
+    }
+
+    */
+    
+    
+    /*
+    //passed test
+    @isTest
+    static void TestPlayerTriggerHandler(){
+        test.startTest();
+        Cricket_Team__c testteam= new Cricket_Team__c(Name='test team');
+        insert testteam;
+        
+        Cricket_Player__c player = new Cricket_Player__c();
+        player.Name='rcb player';
+        player.Type_of_Player__c='Batsmen';
+        player.Cricket_Team__c= testteam.id;
+        
+        insert player;
+        
+        Cricket_Player__c player2 = new Cricket_Player__c();
+        player2.Name='rcb player';
+        player2.Type_of_Player__c='Openner BatsMen';
+        player2.Cricket_Team__c= testteam.id;
+        
+        insert player2;
+        
+        test.StopTest();
+        
+    }
+    */
+    
+    /*
+    @isTest
+    static void TestPlayerUpdate(){
+        test.startTest();
+        Cricket_Team__c testteam= new Cricket_Team__c(Name='test team');
+        insert testteam;
+        
+        Cricket_Player__c player = new Cricket_Player__c();
+        player.Name='rcb player';
+        player.Type_of_Player__c='Batsmen';
+        player.Cricket_Team__c= testteam.id;
+        
+        insert player;
+        
+        player.Type_of_Player__c='Openner BatsMen';
+        update player;
+        test.StopTest();
+    }
+*/
+    
+    
+    /*
+    @isTest
+    static void TestExceedplyrLimit(){
+        
+        Cricket_Team__c teamQ = new Cricket_Team__c(Name='Test Team');
+        insert teamQ;
+        
+        List<Cricket_Player__c> players = new List<Cricket_Player__c>();
+        for(integer i= 0; i<16; i++){
+            Cricket_Player__c player = new Cricket_Player__c();
+            player.Name='rcb player' +i;
+            player.Type_of_Player__c='Batsmen';
+            player.Cricket_Team__c= teamQ.id;
+        }
+        
+        try{
+            test.startTest();
+            insert players;  
+            test.StopTest();
+        }
+        catch(DmlException e){
+            system.AssertEquals('Only 7 Indian Active player are allowed to play for match', e.getMessage());
+        }
+    }
+    
+
+    //passed test
+    @isTest
+    static void TestDeletingPlayers(){
+        
+        test.startTest();
+        Cricket_Team__c testteam= new Cricket_Team__c(Name='test team');
+        insert testteam;
+        
+        Cricket_Player__c player = new Cricket_Player__c();
+        player.Name='rcb player';
+        player.Type_of_Player__c='Batsmen';
+        player.Cricket_Team__c= testteam.id;
+        
+        insert player;
+        
+        Cricket_Player__c player2 = new Cricket_Player__c();
+        player2.Name='rcb player';
+        player2.Type_of_Player__c='Openner BatsMen';
+        player2.Cricket_Team__c= testteam.id;
+        
+        insert player2;
+        
+        delete player;
+        delete player2;
+        
+        Cricket_Team__c plyrCountrightNow = [Select Id, Name, No_of_Players__c FROM Cricket_Team__c WHERE id = :testteam.id];
+        System.AssertEquals(0,plyrCountrightNow.No_of_Players__c);
+        test.StopTest();
+    }
+    */
+    
+    
+    /*
+    @isTest
+    static void TestDeletingbulkPlayers(){
+        
+        test.startTest();
+        Cricket_Team__c testteam= new Cricket_Team__c(Name='test team');
+        insert testteam;
+        
+        List<Cricket_Player__c> players = new List<Cricket_Player__c>();
+        For(Integer i = 0; i<15;i++){
+            Cricket_Player__c player = new Cricket_Player__c();
+            player.Name='rcb player'+i;
+            player.Player_Active__c= false;
+            player.Foreign_player__c= false;
+            player.Type_of_Player__c='Batsmen';
+            player.Cricket_Team__c= testteam.id;
+            players.add(player);
+        }
+        insert players;
+        
+        List<Database.DeleteResult> deleteResults =Database.delete(Players,false);
+        for(Database.DeleteResult deleteResult : deleteResults){
+            System.assert(deleteResult.isSuccess(),'Player delete should be successful');
+        }
+        
+        test.StopTest();
+        Integer PlayerCountAfterDeletion = [SELECT Count() from Cricket_Player__c WHERE Cricket_Team__c =: testteam.id];
+        
+        System.AssertEquals(0,PlayerCountAfterDeletion);    
+        
+    }
+    */
+
+    
+    /*
+@isTest
+static void testActiveplayers(){
+CricketPlayerUtility.CheckTotalPlayer();
+
+}
+
+*/
+    /*
+    @isTest
+    static void testBatter(){
+        test.startTest();
+        
+        Cricket_Team__c team = new Cricket_Team__c();
+        team.Name = 'CSK';
+        insert team;
+        
+        List<Cricket_Player__c> MaxPlayerCountList = new List<Cricket_Player__c>();
+        
+        for(integer i = 0; i<2 ; i++){
+            Cricket_Player__c maxplayers = new Cricket_Player__c();
+            maxplayers.Name= 'CSK PLayer' +i;
+            maxplayers.Player_Active__c = true;
+            maxplayers.Foreign_player__c = false;
+            maxplayers.Type_of_Player__c = 'Openner Batsmen';
+            maxplayers.Cricket_Team__c = team.id;
+            MaxPlayerCountList.add(maxplayers);
+        }
+        
+        insert MaxPlayerCountList; 
+        
+        Cricket_Player__c extraplayer = new Cricket_Player__c();
+        extraplayer.Name= 'CSK PLayer';
+        extraplayer.Player_Active__c = true;
+        extraplayer.Foreign_player__c = false;
+        extraplayer.Type_of_Player__c = 'Openner Batsmen';
+        extraplayer.Cricket_Team__c = team.id;
+        
+        try{
+            insert extraplayer;
+        }
+        catch(DMLException e){
+            system.assert(e.getMessage().contains(' Only two Openning Batsmen can play on Field'), 'No error as expected');
+        }
+        test.stopTest();
+    }
+    */
+     
+    /*
+@isTest
+public static void CheckMAXPlayer(){
+
+Cricket_Team__c team1 = new Cricket_Team__c(Name = 'CSK');
+insert team1;
+
+Cricket_Team__c team2 = new Cricket_Team__c(Name = 'MI');
+insert team2;  
+
+List<Cricket_Player__c> team2players = new List<Cricket_Player__c>();
+for(integer i = 0; 1<15 ; i++){
+team2players.add(new Cricket_Player__c(Name = 'player' +i, Cricket_Team__c = team2.id));
+
+}
+insert team2players;
+
+List<Cricket_Player__c> players = new List<Cricket_Player__c>();
+for(integer i = 0; 1<15 ; i++){
+players.add(new Cricket_Player__c(Name = 'player' +i, Cricket_Team__c = team1.id));
+
+}
+insert players;
+
+for(Cricket_Player__c player : players){
+player.Cricket_Team__c = team2.Id;
+}
+
+Test.starttest();
+DataBase.SaveResult[] results = Database.update(players, false);
+Test.stopTest();
+
+for(Database.SaveResult result: results){
+system.assert(!result.isSuccess(), 'VAlidation did not fire as Expected');
+system.assert(result.getErrors()[0].getMessage().contains('only 25 players are Allowed in'));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+*/
+    
+    /*
+    //passedTest
+    @isTest
+    public static void AfterUpdateMethodTest(){
+        
+        test.startTest();
+        Cricket_Team__c teamRCB = new Cricket_Team__c();
+        teamRCB.Name = 'teamRCB';        
+        insert teamRCB;
+        
+        Cricket_Team__c teamCSK = new Cricket_Team__c();
+        insert teamCSK;
+        
+        
+        List<Cricket_Player__c> BulkRCBList = new List<Cricket_Player__c>();
+        for(integer i =0; i<4 ; i++){
+            Cricket_Player__c player = new Cricket_Player__c();
+            player.Cricket_Team__c = teamRCB.Id;
+            player.Name= 'RCB player'+i;
+            player.Player_Active__c = true;
+            player.Type_of_Player__c = 'BatsMen';
+            BulkRCBList.add(player);
+        }
+        
+        insert BulkRCBList;
+        
+        List<Cricket_Player__c> UpdateTeamList = new List<Cricket_Player__c>([SELECT ID, Cricket_Team__c FROM Cricket_Player__c WHERE Cricket_Team__c = : teamRCB.Id]);
+        
+        for(Cricket_Player__c updatePlayer : UpdateTeamList){
+            updatePlayer.Cricket_Team__c = teamCSK.id;
+        }        
+        update UpdateTeamList;
+        
+        //Verifing the Update
+        List<Cricket_Player__c> VerifyQuery = new List<Cricket_Player__c>([SELECT ID, Cricket_Team__c 
+                                                                           FROM Cricket_Player__c
+                                                                           WHERE Cricket_Team__c = : teamCSK.Id]);
+        system.assertEquals(4, VerifyQuery.size(),'ALl players should belong to CSK now');
+        
+        test.stopTest();
+    }
+    
+    @isTest
+    public static void AfterUpdateBatsmenTest(){
+        
+        test.startTest();
+        //Change the RCB
+        Cricket_Team__c teamRCB = new Cricket_Team__c();
+        teamRCB.Name = 'teamRCB';        
+        insert teamRCB;
+        
+        //to CSK
+        Cricket_Team__c teamCSK = new Cricket_Team__c();
+        insert teamCSK;
+        
+        
+        List<Cricket_Player__c> BulkRCBList = new List<Cricket_Player__c>();
+        for(integer i = 1; i<2 ; i++){
+            Cricket_Player__c player = new Cricket_Player__c();
+            player.Cricket_Team__c = teamRCB.Id;
+            player.Name= 'RCB player';
+            player.Player_Active__c = true;
+            player.Type_of_Player__c = 'Openner BatsMen';
+            BulkRCBList.add(player);
+        }
+        
+        insert BulkRCBList;
+        
+        List<Cricket_Player__c> teamList = [SELECT Id, Cricket_Team__c FROM Cricket_Player__c WHERE Cricket_Team__c =: teamRCB.id ];
+        for(Cricket_Player__c UpdatePlayer : teamList){
+            UpdatePlayer.Cricket_Team__c = teamCSK.id;
+        }
+        
+        update teamList;
+        
+        // List<Cricket_Player__c> VerifyQuery = new List<Cricket_Player__c>([Select Id, Cricket_Team__c FROM Cricket_Player__c WHERE Type_of_Player__c = 'Openner BatsMen']);
+        Cricket_Team__c VerifyQuery = ([Select id, Opener_Batter__c FROM Cricket_Team__c WHERE id =: teamCSK.id]);
+        system.assertEquals('RCB player,', VerifyQuery.Opener_Batter__c);
+    
+    test.stopTest();
+    }
+
+*/
+
+}

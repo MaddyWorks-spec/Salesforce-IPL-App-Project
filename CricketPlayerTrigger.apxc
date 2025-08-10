@@ -1,0 +1,40 @@
+trigger CricketPlayerTrigger on Cricket_Player__c (before insert, before Update ,After Insert ,After update,after delete) {
+    
+    Switch on Trigger.OperationType {
+        
+        WHEN BEFORE_INSERT{
+            
+            CricketplayerHandler.beforeInsertValidationSimplified(trigger.new);
+            CricketplayerHandler.beforeInsertCheckForeignField(trigger.new);
+            CricketplayerHandler.onlySEVENPlayerActive(trigger.new);
+            CricketplayerHandler.onlyTwoBatter(trigger.new);
+            
+        }
+        WHEN BEFORE_UPDATE{
+            CricketPlayerHandler.only25Players(trigger.newMap, trigger.oldMap);
+            CricketPlayerHandler.OnlySevenPlayers(trigger.newMap, trigger.oldMap);
+            CricketPlayerHandler.OnlyFourForeignPlayer(trigger.newMap, trigger.oldMap);
+            CricketPlayerHandler.OnlyTwoBatterPlayer(trigger.newMap, trigger.oldMap);
+            CricketPlayerHandler.OnlyEightForeignPlayer(trigger.newMap, trigger.oldMap);
+        }
+        WHEN AFTER_INSERT{
+            
+            CricketPlayerHandler.AllFieldCount(trigger.new);
+            CricketPlayerHandler.openingBatsmanHandler(trigger.new);
+        }
+        WHEN AFTER_UPDATE{  
+            
+            CricketPlayerHandler.afterUpdateAllFieldCount(trigger.new, trigger.oldMap);
+            CricketPlayerHandler.AfterUpdateOpenningBatter(trigger.new, trigger.oldMap);
+        }
+        
+        WHEN AFTER_DELETE{  
+            system.debug('THis is working');
+          
+            CricketPlayerHandler.afterBulkDeletion(trigger.old);
+            CricketPlayerHandler.openerBatsmenDeletion(trigger.old);
+        }
+        
+    }
+    
+}
